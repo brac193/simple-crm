@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CarRental - <%= content_for?(:title) ? yield(:title) : "Premium Car Rental Service" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  </head>
+
+  <body data-admin="<%= current_user&.admin? %>">
+    <nav class="navbar">
+      <div class="navbar-brand">
+        <%= link_to root_path, class: "navbar-item" do %>
+          <i class="fas fa-car"></i> CarRental
+        <% end %>
+      </div>
+      <div class="navbar-menu">
+        <%= link_to "Cars", cars_path, class: "navbar-item" %>
+        <%= link_to "My Reservations", my_reservations_path, class: "navbar-item" %>
+        <% if current_user&.admin? %>
+          <%= link_to "Admin", admin_path, class: "navbar-item" %>
+        <% end %>
+      </div>
+      <div class="navbar-end">
+        <% if user_signed_in? %>
+          <div class="navbar-item">
+            <span style="color: white; margin-right: 1rem;"><%= current_user.full_name %></span>
+            <%= button_to "Sign Out", destroy_user_session_path, method: :delete, class: "button" %>
+          </div>
+        <% else %>
+          <%= link_to "Sign In", new_user_session_path, class: "button" %>
+        <% end %>
+      </div>
+    </nav>
+
+    <main class="container">
+      <% if notice %>
+        <div class="alert alert-success">
+          <%= notice %>
+        </div>
+      <% end %>
+      
+      <% if alert %>
+        <div class="alert alert-danger">
+          <%= alert %>
+        </div>
+      <% end %>
+
+      <%= yield %>
+    </main>
+
+    <footer style="background-color: #2c3e50; color: white; text-align: center; padding: 1rem; margin-top: 2rem;">
+      <p>&copy; 2024 CarRental. All rights reserved.</p>
+    </footer>
+  </body>
+</html>

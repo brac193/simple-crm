@@ -1,0 +1,350 @@
+<% content_for :title, "New Reservation" %>
+
+<% if @reservation.car.present? %>
+  <script id="car-data" type="application/json">
+    <%= raw @reservation.car.to_json(only: [:id, :daily_rate], methods: [:display_name]) %>
+  </script>
+<% end %>
+
+<div class="row">
+  <div class="col-md-8">
+    <div class="card">
+      <h1 class="card-title mb-6">New Reservation</h1>
+      
+      <%= form_with model: @reservation, url: reservations_path, local: true, class: "space-y-4" do |form| %>
+        <% if @reservation.errors.any? %>
+          <div class="alert alert-danger">
+            <h4><%= pluralize(@reservation.errors.count, "error") %> prohibited this reservation from being saved:</h4>
+            <ul>
+              <% @reservation.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+        
+        <div class="form-group">
+          <%= form.label :car_id, "Car", class: "form-label" %>
+          <% if @reservation.car.present? %>
+            <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 0.5rem; border: 1px solid #e5e7eb;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <h4 style="margin: 0; color: #1f2937;"><%= @reservation.car.display_name %></h4>
+                  <p style="margin: 0.25rem 0 0 0; color: #6b7280;">
+                    <i class="fas fa-id-card" style="margin-right: 0.25rem;"></i><%= @reservation.car.license_plate %>
+                  </p>
+                  <p style="margin: 0.25rem 0 0 0; color: #6b7280;">
+                    <i class="fas fa-dollar-sign" style="margin-right: 0.25rem;"></i><%= number_to_currency(@reservation.car.daily_rate) %> / day
+                  </p>
+                </div>
+                <span class="car-type-badge <%= @reservation.car.car_type %>">
+                  <%= @reservation.car.car_type.titleize %>
+                </span>
+              </div>
+            </div>
+            <%= form.hidden_field :car_id %>
+          <% else %>
+            <%= form.select :car_id, 
+                Car.all.map { |car| ["#{car.display_name} - #{number_to_currency(car.daily_rate)}/day", car.id] },
+                { prompt: "Select a car" },
+                { class: "form-control", required: true } %>
+          <% end %>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <%= form.label :start_date, "Start Date", class: "form-label" %>
+              <%= form.date_field :start_date, 
+                  min: Date.current,
+                  class: "form-control",
+                  required: true %>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <div class="form-group">
+              <%= form.label :end_date, "End Date", class: "form-label" %>
+              <%= form.date_field :end_date, 
+                  min: Date.current + 1.day,
+                  class: "form-control",
+                  required: true %>
+            </div>
+          </div>
+        </div>
+        
+        <div id="availability-check" style="display: none;">
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>
+            <span id="availability-message">Checking availability...</span>
+          </div>
+        </div>
+        
+        <div id="reservation-summary" style="display: none;">
+          <div style="background-color: #f0f8ff; padding: 1rem; border-radius: 0.5rem; border: 1px solid #dbeafe;">
+            <h3 style="font-weight: 600; color: #1e40af; margin-bottom: 0.5rem;">Reservation Summary</h3>
+            <div class="space-y-2" style="font-size: 0.875rem;">
+              <div style="display: flex; justify-content: space-between;">
+                <span>Daily Rate:</span>
+                <span id="summary-daily-rate">-</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span>Duration:</span>
+                <span id="summary-duration">-</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span>Original Price:</span>
+                <span id="summary-original-price">-</span>
+              </div>
+              <div id="summary-discount" style="display: none;">
+                <div style="display: flex; justify-content: space-between; color: #27ae60;">
+                  <span>Admin Discount (20%):</span>
+                  <span id="summary-discount-amount">-</span>
+                </div>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 1.125rem; border-top: 1px solid #dbeafe; padding-top: 0.5rem;">
+                <span>Total Price:</span>
+                <span id="summary-total-price">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="flex gap-2">
+          <%= form.submit "Create Reservation", class: "btn btn-primary flex-1", id: "submit-btn", disabled: true %>
+          <%= link_to "Cancel", cars_path, class: "btn btn-secondary flex-1 text-center" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <div class="card">
+      <h2 class="card-title mb-4">Reservation Guidelines</h2>
+      <div class="space-y-3">
+        <div style="display: flex; align-items: flex-start;">
+          <i class="fas fa-calendar-check" style="color: #27ae60; margin-right: 0.5rem; margin-top: 0.25rem;"></i>
+          <div>
+            <strong>Minimum Duration:</strong> 1 day
+          </div>
+        </div>
+        <div style="display: flex; align-items: flex-start;">
+          <i class="fas fa-calendar-times" style="color: #e74c3c; margin-right: 0.5rem; margin-top: 0.25rem;"></i>
+          <div>
+            <strong>Maximum Duration:</strong> 30 days
+          </div>
+        </div>
+        <div style="display: flex; align-items: flex-start;">
+          <i class="fas fa-clock" style="color: #f39c12; margin-right: 0.5rem; margin-top: 0.25rem;"></i>
+          <div>
+            <strong>Advance Booking:</strong> Up to 6 months
+          </div>
+        </div>
+        <div style="display: flex; align-items: flex-start;">
+          <i class="fas fa-exclamation-triangle" style="color: #f39c12; margin-right: 0.5rem; margin-top: 0.25rem;"></i>
+          <div>
+            <strong>Cancellation:</strong> Free up to 24 hours before
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+  
+  // Wait for DOM to be ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initReservationForm);
+  } else {
+    initReservationForm();
+  }
+  
+  function initReservationForm() {
+    // Get all required elements
+    const startDateInput = document.getElementById('reservation_start_date');
+    const endDateInput = document.getElementById('reservation_end_date');
+    const carSelect = document.getElementById('reservation_car_id');
+    const availabilityCheck = document.getElementById('availability-check');
+    const availabilityMessage = document.getElementById('availability-message');
+    const reservationSummary = document.getElementById('reservation-summary');
+    const summaryDailyRate = document.getElementById('summary-daily-rate');
+    const summaryDuration = document.getElementById('summary-duration');
+    const summaryOriginalPrice = document.getElementById('summary-original-price');
+    const summaryDiscount = document.getElementById('summary-discount');
+    const summaryDiscountAmount = document.getElementById('summary-discount-amount');
+    const summaryTotalPrice = document.getElementById('summary-total-price');
+    const submitBtn = document.getElementById('submit-btn');
+    
+    // Check if all required elements exist
+    if (!startDateInput || !endDateInput || !availabilityCheck || !availabilityMessage || 
+        !reservationSummary || !summaryDailyRate || !summaryDuration || !summaryTotalPrice || !submitBtn) {
+      console.error('Required form elements not found');
+      return;
+    }
+    
+    let selectedCar = null;
+    
+    // Get car data from data attributes if available
+    const carDataElement = document.getElementById('car-data');
+    if (carDataElement) {
+      try {
+        const carData = JSON.parse(carDataElement.textContent);
+        selectedCar = {
+          id: carData.id,
+          daily_rate: parseFloat(carData.daily_rate),
+          display_name: carData.display_name
+        };
+        console.log('Car data loaded:', selectedCar);
+      } catch (e) {
+        console.error('Error parsing car data:', e);
+      }
+    }
+    
+    function checkAvailability() {
+      const startDate = startDateInput.value;
+      const endDate = endDateInput.value;
+      const carId = selectedCar ? selectedCar.id : (carSelect ? carSelect.value : null);
+      
+      if (!startDate || !endDate || !carId) {
+        availabilityCheck.style.display = 'none';
+        reservationSummary.style.display = 'none';
+        submitBtn.disabled = true;
+        return;
+      }
+      
+      if (new Date(startDate) >= new Date(endDate)) {
+        availabilityMessage.innerHTML = '<span style="color: #e74c3c;">End date must be after start date</span>';
+        availabilityCheck.className = 'alert alert-danger';
+        availabilityCheck.style.display = 'block';
+        reservationSummary.style.display = 'none';
+        submitBtn.disabled = true;
+        return;
+      }
+      
+      // Show loading
+      availabilityMessage.innerHTML = '<span style="color: #3498db;"><i class="fas fa-spinner fa-spin"></i> Checking availability...</span>';
+      availabilityCheck.className = 'alert alert-info';
+      availabilityCheck.style.display = 'block';
+      submitBtn.disabled = true;
+      
+      // Make AJAX request to check availability
+      fetch('/cars/' + carId + '/availability?start_date=' + startDate + '&end_date=' + endDate)
+        .then(function(response) {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
+        .then(function(data) {
+          if (data.available) {
+            availabilityMessage.innerHTML = '<span style="color: #27ae60;"><i class="fas fa-check-circle"></i> Car is available for selected dates</span>';
+            availabilityCheck.className = 'alert alert-success';
+            submitBtn.disabled = false;
+            updateSummary();
+          } else {
+            availabilityMessage.innerHTML = '<span style="color: #e74c3c;"><i class="fas fa-times-circle"></i> Car is not available for selected dates</span>';
+            availabilityCheck.className = 'alert alert-danger';
+            submitBtn.disabled = true;
+            reservationSummary.style.display = 'none';
+          }
+        })
+        .catch(function(error) {
+          console.error('Error checking availability:', error);
+          availabilityMessage.innerHTML = '<span style="color: #e74c3c;"><i class="fas fa-exclamation-triangle"></i> Error checking availability</span>';
+          availabilityCheck.className = 'alert alert-danger';
+          submitBtn.disabled = true;
+        });
+    }
+    
+    function updateSummary() {
+      if (!selectedCar) return;
+      
+      const startDate = new Date(startDateInput.value);
+      const endDate = new Date(endDateInput.value);
+      
+      if (startDate && endDate && endDate > startDate) {
+        const diffTime = Math.abs(endDate - startDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const dailyRate = parseFloat(selectedCar.daily_rate);
+        
+        // Check if dailyRate is a valid number
+        if (isNaN(dailyRate)) {
+          console.error('Invalid daily rate:', selectedCar.daily_rate);
+          return;
+        }
+        
+        const originalPrice = diffDays * dailyRate;
+        const isAdmin = document.body.getAttribute('data-admin') === 'true';
+        const discountAmount = isAdmin ? originalPrice * 0.20 : 0;
+        const finalPrice = originalPrice - discountAmount;
+        
+        summaryDailyRate.textContent = '$' + dailyRate.toFixed(2);
+        summaryDuration.textContent = diffDays + ' day' + (diffDays > 1 ? 's' : '');
+        summaryOriginalPrice.textContent = '$' + originalPrice.toFixed(2);
+        
+        if (isAdmin && discountAmount > 0) {
+          summaryDiscountAmount.textContent = '-$' + discountAmount.toFixed(2);
+          summaryDiscount.style.display = 'block';
+        } else {
+          summaryDiscount.style.display = 'none';
+        }
+        
+        summaryTotalPrice.textContent = '$' + finalPrice.toFixed(2);
+        reservationSummary.style.display = 'block';
+      }
+    }
+    
+    // Event listeners
+    startDateInput.addEventListener('change', checkAvailability);
+    endDateInput.addEventListener('change', checkAvailability);
+    
+    // Handle car selection if car select exists
+    if (carSelect) {
+      carSelect.addEventListener('change', function() {
+        const carId = this.value;
+        if (carId) {
+          // Fetch car details for the selected car
+          fetch('/cars/' + carId)
+            .then(function(response) {
+              if (!response.ok) {
+                throw new Error('Network response was not ok');
+              }
+              return response.json();
+            })
+            .then(function(data) {
+              selectedCar = {
+                id: data.id,
+                daily_rate: parseFloat(data.daily_rate),
+                display_name: data.display_name
+              };
+              checkAvailability();
+            })
+            .catch(function(error) {
+              console.error('Error fetching car details:', error);
+              selectedCar = null;
+              availabilityCheck.style.display = 'none';
+              reservationSummary.style.display = 'none';
+              submitBtn.disabled = true;
+            });
+        } else {
+          selectedCar = null;
+          availabilityCheck.style.display = 'none';
+          reservationSummary.style.display = 'none';
+          submitBtn.disabled = true;
+        }
+      });
+    }
+    
+    // If car is pre-selected and dates are filled, check availability on load
+    if (selectedCar && startDateInput.value && endDateInput.value) {
+      // Small delay to ensure DOM is fully ready
+      setTimeout(function() {
+        checkAvailability();
+      }, 100);
+    }
+  }
+})();
+</script>

@@ -1,0 +1,96 @@
+<% content_for :title, "Available Cars" %>
+
+<div class="card mb-6">
+  <h1 class="card-title mb-6">Available Cars</h1>
+  
+  <!-- Filters -->
+  <%= form_with url: cars_path, method: :get, local: true, class: "mb-6" do |form| %>
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <label class="form-label">Car Type</label>
+        <%= select_tag :car_type, 
+            options_for_select([['All Types', ''], ['Small', 'small'], ['City', 'city'], ['SUV', 'suv']], params[:car_type]),
+            class: "form-control" %>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label">Max Daily Rate</label>
+        <%= number_field_tag :max_price, params[:max_price], 
+            placeholder: "Any price",
+            class: "form-control" %>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label">Min Year</label>
+        <%= number_field_tag :min_year, params[:min_year], 
+            placeholder: "Any year",
+            class: "form-control" %>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label">&nbsp;</label>
+        <div class="flex gap-2">
+          <%= form.submit "Apply Filters", class: "btn btn-primary flex-1" %>
+          <%= link_to "Clear", cars_path, class: "btn btn-secondary flex-1 text-center" %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<!-- Cars Grid -->
+<div class="row">
+  <% @cars.each do |car| %>
+    <div class="col-md-6 col-lg-4 col-xl-3">
+      <div class="car-card">
+        <div class="car-card-image">
+          <i class="fas fa-car" style="font-size: 3rem; color: #6c757d;"></i>
+        </div>
+        <div class="car-card-content">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+            <h3 style="font-size: 1.125rem; font-weight: 600; color: #1f2937; margin: 0;"><%= car.display_name %></h3>
+            <span class="car-type-badge <%= car.car_type %>">
+              <%= car.car_type.titleize %>
+            </span>
+          </div>
+          
+          <div class="space-y-2 mb-4">
+            <p style="font-size: 0.875rem; color: #6b7280;">
+              <i class="fas fa-id-card" style="margin-right: 0.25rem;"></i>
+              <%= car.license_plate %>
+            </p>
+            <p style="font-size: 0.875rem; color: #6b7280;">
+              <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>
+              <%= car.year %>
+            </p>
+            <p style="font-size: 1.125rem; font-weight: 700; color: #2563eb;">
+              <i class="fas fa-dollar-sign" style="margin-right: 0.25rem;"></i>
+              <%= number_to_currency(car.daily_rate) %> / day
+            </p>
+          </div>
+          
+          <div class="flex gap-2">
+            <%= link_to "View Details", car_path(car), class: "btn btn-primary flex-1 text-center" %>
+            <%= link_to "Reserve", new_reservation_path(car_id: car.id), class: "btn btn-secondary flex-1 text-center" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<% if @cars.empty? %>
+  <div class="text-center" style="padding: 3rem 0;">
+    <i class="fas fa-car" style="font-size: 4rem; color: #d1d5db; margin-bottom: 1rem;"></i>
+    <h3 style="font-size: 1.25rem; font-weight: 600; color: #6b7280; margin-bottom: 0.5rem;">No cars available</h3>
+    <p style="color: #9ca3af;">Try adjusting your filters or check back later.</p>
+  </div>
+<% end %>
+
+<% if current_user&.admin? %>
+  <div class="text-center mt-6">
+    <%= link_to new_car_path, class: "btn btn-primary" do %>
+      <i class="fas fa-plus" style="margin-right: 0.5rem;"></i>Add New Car
+    <% end %>
+  </div>
+<% end %>

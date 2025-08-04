@@ -1,0 +1,123 @@
+<% content_for :title, "All Reservations" %>
+
+<div class="card mb-6">
+  <h1 class="card-title mb-6">All Reservations</h1>
+  
+  <%= form_with url: admin_reservations_path, method: :get, local: true, class: "mb-4" do |form| %>
+    <div class="row">
+      <div class="col-md-3">
+        <label class="form-label">Status</label>
+        <%= select_tag :status, 
+            options_for_select([['All', ''], ['Active', 'active'], ['Upcoming', 'upcoming'], ['Past', 'past']], params[:status]),
+            class: "form-control" %>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label">User</label>
+        <%= select_tag :user_id, 
+            options_from_collection_for_select(User.all, :id, :full_name, params[:user_id]),
+            prompt: "All Users",
+            class: "form-control" %>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label">Car Type</label>
+        <%= select_tag :car_type, 
+            options_for_select([['All Types', ''], ['Small', 'small'], ['City', 'city'], ['SUV', 'suv']], params[:car_type]),
+            class: "form-control" %>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label">&nbsp;</label>
+        <div class="flex gap-2">
+          <%= form.submit "Apply Filters", class: "btn btn-primary flex-1" %>
+          <%= link_to "Clear", admin_reservations_path, class: "btn btn-secondary flex-1 text-center" %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<div class="card">
+  <% if @reservations.any? %>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Car</th>
+            <th>Dates</th>
+            <th>Created By</th>
+            <th>Status</th>
+            <th>Total Price</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @reservations.each do |reservation| %>
+            <tr>
+              <td>
+                <strong><%= reservation.user.full_name %></strong><br>
+                <small style="color: #6b7280;"><%= reservation.user.email %></small>
+              </td>
+              <td>
+                <strong><%= reservation.car.display_name %></strong><br>
+                <small style="color: #6b7280;"><%= reservation.car.license_plate %></small>
+              </td>
+              <td>
+                <%= reservation.start_date.strftime("%b %d, %Y") %> - <%= reservation.end_date.strftime("%b %d, %Y") %><br>
+                <small style="color: #6b7280;"><%= pluralize(reservation.duration_days, 'day') %></small>
+              </td>
+              <td>
+                <strong><%= reservation.created_by.full_name %></strong><br>
+                <small style="color: #6b7280;"><%= reservation.created_by.email %></small>
+              </td>
+              <td>
+                <% if reservation.is_completed? %>
+                  <span class="status-badge completed">Completed</span>
+                <% elsif reservation.is_active? %>
+                  <span class="status-badge active">Active</span>
+                <% elsif reservation.is_upcoming? %>
+                  <span class="status-badge upcoming">Upcoming</span>
+                <% else %>
+                  <span class="status-badge completed">Completed</span>
+                <% end %>
+              </td>
+              <td>
+                <strong><%= number_to_currency(reservation.final_amount_after_discount) %></strong>
+                <% if reservation.admin_discount? %>
+                  <br>
+                  <small style="color: #27ae60;">
+                    <i class="fas fa-tag" style="margin-right: 0.25rem;"></i>20% Admin Discount
+                  </small>
+                <% end %>
+              </td>
+              <td>
+                <div class="flex gap-2">
+                  <%= link_to "View", reservation_path(reservation), class: "btn btn-sm btn-primary" %>
+                  <% if reservation.is_upcoming? %>
+                    <%= link_to "Edit", edit_reservation_path(reservation), class: "btn btn-sm btn-warning" %>
+                    <%= link_to "Cancel", cancel_reservation_path(reservation), 
+                        data: { confirm: "Are you sure you want to cancel this reservation?" },
+                        class: "btn btn-sm btn-danger" %>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="text-center" style="padding: 2rem;">
+      <i class="fas fa-calendar-times" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem;"></i>
+      <p style="color: #6b7280;">No reservations found.</p>
+    </div>
+  <% end %>
+</div>
+
+<div class="mt-4">
+  <%= link_to admin_path, class: "btn btn-secondary" do %>
+    <i class="fas fa-arrow-left" style="margin-right: 0.5rem;"></i>Back to Dashboard
+  <% end %>
+</div>

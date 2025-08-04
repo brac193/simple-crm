@@ -1,0 +1,173 @@
+<% content_for :title, "Invoice ##{@invoice.id}" %>
+
+<div class="row">
+  <div class="col-md-8">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+        <h1 class="card-title" style="margin: 0;">Invoice #<%= @invoice.id %></h1>
+        
+        <% case @invoice.status %>
+        <% when "pending" %>
+          <span class="status-badge upcoming">Pending</span>
+        <% when "paid" %>
+          <span class="status-badge active">Paid</span>
+        <% when "overdue" %>
+          <span class="status-badge active" style="background-color: #e74c3c;">Overdue</span>
+        <% end %>
+      </div>
+      
+      <div class="space-y-4">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+          <span style="color: #6b7280; font-weight: 500;">Customer</span>
+          <span style="font-weight: 600;"><%= @invoice.user.full_name %></span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+          <span style="color: #6b7280; font-weight: 500;">Email</span>
+          <span style="font-weight: 600;"><%= @invoice.user.email %></span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+          <span style="color: #6b7280; font-weight: 500;">Car</span>
+          <span style="font-weight: 600;"><%= @invoice.car.display_name %></span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+          <span style="color: #6b7280; font-weight: 500;">License Plate</span>
+          <span style="font-weight: 600;"><%= @invoice.car.license_plate %></span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+          <span style="color: #6b7280; font-weight: 500;">Reservation Period</span>
+          <span style="font-weight: 600;">
+            <%= @invoice.reservation.start_date.strftime("%B %d, %Y") %> - <%= @invoice.reservation.end_date.strftime("%B %d, %Y") %>
+          </span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+          <span style="color: #6b7280; font-weight: 500;">Duration</span>
+          <span style="font-weight: 600;"><%= pluralize(@invoice.reservation.duration_days, 'day') %></span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+          <span style="color: #6b7280; font-weight: 500;">Daily Rate</span>
+          <span style="font-weight: 600;"><%= number_to_currency(@invoice.car.daily_rate) %></span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+          <span style="color: #6b7280; font-weight: 500;">Original Amount</span>
+          <span style="font-weight: 600;"><%= @invoice.formatted_original_amount %></span>
+        </div>
+        
+        <% if @invoice.has_admin_discount? %>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+            <span style="color: #27ae60; font-weight: 500;">Admin Discount (20%)</span>
+            <span style="color: #27ae60; font-weight: 600;">-<%= @invoice.formatted_discount_amount %></span>
+          </div>
+        <% end %>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+          <span style="color: #6b7280; font-weight: 500;">Base Amount</span>
+          <span style="font-weight: 600;"><%= @invoice.formatted_amount %></span>
+        </div>
+        
+        <% if @invoice.penalty_amount > 0 %>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+            <span style="color: #e74c3c; font-weight: 500;">Late Return Penalty</span>
+            <span style="color: #e74c3c; font-weight: 600;"><%= @invoice.formatted_penalty_amount %></span>
+          </div>
+        <% end %>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0;">
+          <span style="color: #6b7280; font-weight: 500;">Total Amount</span>
+          <span style="font-size: 1.5rem; font-weight: 700; color: #2563eb;"><%= @invoice.formatted_total_amount %></span>
+        </div>
+      </div>
+      
+      <div class="border-t pt-6 mt-6">
+        <div class="flex gap-2">
+          <% if @invoice.status == "pending" %>
+            <%= form_with url: mark_paid_admin_invoice_path(@invoice), method: :patch, local: true do |form| %>
+              <%= form.submit "Mark as Paid", 
+                  class: "btn btn-success flex-1",
+                  data: { confirm: "Mark this invoice as paid?" } %>
+            <% end %>
+          <% end %>
+          
+          <% if current_user.admin? %>
+            <%= link_to "Back to All Invoices", admin_invoices_path, class: "btn btn-secondary flex-1 text-center" %>
+          <% else %>
+            <%= link_to "Back to My Reservations", my_reservations_path, class: "btn btn-secondary flex-1 text-center" %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <div class="card">
+      <h2 class="card-title mb-4">Invoice Summary</h2>
+      <div class="space-y-3">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: #6b7280;">Invoice Date:</span>
+          <span style="font-weight: 600;"><%= @invoice.created_at.strftime("%b %d, %Y") %></span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: #6b7280;">Due Date:</span>
+          <span style="font-weight: 600;"><%= @invoice.due_date.strftime("%b %d, %Y") %></span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: #6b7280;">Status:</span>
+          <% case @invoice.status %>
+          <% when "pending" %>
+            <span class="status-badge upcoming">Pending</span>
+          <% when "paid" %>
+            <span class="status-badge active">Paid</span>
+          <% when "overdue" %>
+            <span class="status-badge active" style="background-color: #e74c3c;">Overdue</span>
+          <% end %>
+        </div>
+        
+        <% if @invoice.paid_at.present? %>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #6b7280;">Paid Date:</span>
+            <span style="font-weight: 600;"><%= @invoice.paid_at.strftime("%b %d, %Y") %></span>
+          </div>
+        <% end %>
+        
+        <% if @invoice.overdue? %>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #e74c3c;">Days Overdue:</span>
+            <span style="color: #e74c3c; font-weight: 600;"><%= @invoice.days_overdue %></span>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    
+    <div class="card mt-4">
+      <h3 class="card-title mb-4">Car Return Status</h3>
+      <div class="space-y-3">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: #6b7280;">Return Status:</span>
+          <% if @invoice.reservation.is_returned? %>
+            <span class="status-badge active">Returned</span>
+          <% else %>
+            <span class="status-badge upcoming" style="background-color: #e74c3c;">Not Returned</span>
+          <% end %>
+        </div>
+        
+        <% if @invoice.reservation.is_returned? %>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #6b7280;">Returned Date:</span>
+            <span style="font-weight: 600;"><%= @invoice.reservation.returned_at.strftime("%b %d, %Y") %></span>
+          </div>
+        <% elsif @invoice.reservation.is_overdue? %>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #e74c3c;">Days Overdue:</span>
+            <span style="color: #e74c3c; font-weight: 600;"><%= @invoice.reservation.days_overdue %></span>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div> 

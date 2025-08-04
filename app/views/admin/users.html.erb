@@ -1,0 +1,96 @@
+<% content_for :title, "All Users" %>
+
+<div class="card mb-6">
+  <h1 class="card-title mb-6">All Users</h1>
+</div>
+
+<div class="card">
+  <% if @users.any? %>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Active Reservations</th>
+            <th>Total Reservations</th>
+            <th>Joined</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @users.each do |user| %>
+            <tr>
+              <td>
+                <strong><%= user.full_name %></strong>
+              </td>
+              <td>
+                <%= user.email %>
+              </td>
+              <td>
+                <% if user.admin? %>
+                  <span class="status-badge active">Admin</span>
+                <% else %>
+                  <span class="status-badge completed">User</span>
+                <% end %>
+              </td>
+              <td>
+                <% active_reservations = user.active_reservations %>
+                <% if active_reservations.any? %>
+                  <div class="space-y-2">
+                    <% active_reservations.each do |reservation| %>
+                      <div style="border-left: 3px solid #27ae60; padding-left: 0.5rem; margin-bottom: 0.5rem;">
+                        <div style="font-size: 0.875rem; font-weight: 600;">
+                          <%= reservation.car.display_name %>
+                        </div>
+                        <div style="font-size: 0.75rem; color: #6b7280;">
+                          <%= reservation.start_date.strftime("%b %d") %> - <%= reservation.end_date.strftime("%b %d, %Y") %>
+                        </div>
+                        <div style="font-size: 0.75rem; color: #27ae60;">
+                          <%= number_to_currency(reservation.total_price) %>
+                        </div>
+                      </div>
+                    <% end %>
+                  </div>
+                <% else %>
+                  <span style="color: #6b7280; font-style: italic;">No active reservations</span>
+                <% end %>
+              </td>
+              <td>
+                <strong><%= user.reservations_count %></strong>
+                <% if user.reservations_count > 0 %>
+                  <br>
+                  <small style="color: #6b7280;">
+                    <%= pluralize(user.upcoming_reservations_count, 'upcoming') %>,
+                    <%= pluralize(user.past_reservations_count, 'past') %>
+                  </small>
+                <% end %>
+              </td>
+              <td>
+                <%= user.created_at.strftime("%b %d, %Y") %><br>
+                <small style="color: #6b7280;"><%= time_ago_in_words(user.created_at) %> ago</small>
+              </td>
+              <td>
+                <div class="flex gap-2">
+                  <%= link_to "View Reservations", admin_reservations_path(user_id: user.id), class: "btn btn-sm btn-primary" %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="text-center" style="padding: 2rem;">
+      <i class="fas fa-users" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem;"></i>
+      <p style="color: #6b7280;">No users found.</p>
+    </div>
+  <% end %>
+</div>
+
+<div class="mt-4">
+  <%= link_to admin_path, class: "btn btn-secondary" do %>
+    <i class="fas fa-arrow-left" style="margin-right: 0.5rem;"></i>Back to Dashboard
+  <% end %>
+</div>

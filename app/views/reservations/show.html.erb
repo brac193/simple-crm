@@ -1,0 +1,276 @@
+<% content_for :title, "Reservation Details" %>
+
+<div class="row">
+  <!-- Reservation Details -->
+  <div class="col-md-6">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+        <h1 class="card-title" style="margin: 0;">Reservation Details</h1>
+        
+        <% if @reservation.is_completed? %>
+          <span class="status-badge completed">
+            <i class="fas fa-check" style="margin-right: 0.25rem;"></i>Completed
+          </span>
+        <% elsif @reservation.is_active? %>
+          <span class="status-badge active">
+            <i class="fas fa-car" style="margin-right: 0.25rem;"></i>Active
+          </span>
+        <% elsif @reservation.is_upcoming? %>
+          <span class="status-badge upcoming">
+            <i class="fas fa-clock" style="margin-right: 0.25rem;"></i>Upcoming
+          </span>
+        <% else %>
+          <span class="status-badge completed">
+            <i class="fas fa-check" style="margin-right: 0.25rem;"></i>Completed
+          </span>
+        <% end %>
+      </div>
+      
+      <div class="space-y-4">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+          <span style="color: #6b7280; font-weight: 500;">Reservation ID</span>
+          <span style="font-family: monospace; font-weight: 600;">#<%= @reservation.id %></span>
+        </div>
+        
+        <% if current_user.admin? %>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+            <span style="color: #6b7280; font-weight: 500;">Customer</span>
+            <span style="font-weight: 600;"><%= @reservation.user.full_name %></span>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+            <span style="color: #6b7280; font-weight: 500;">Email</span>
+            <span style="font-weight: 600;"><%= @reservation.user.email %></span>
+          </div>
+        <% end %>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+          <span style="color: #6b7280; font-weight: 500;">Start Date</span>
+          <span style="font-weight: 600;"><%= @reservation.start_date.strftime("%B %d, %Y") %></span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+          <span style="color: #6b7280; font-weight: 500;">End Date</span>
+          <span style="font-weight: 600;"><%= @reservation.end_date.strftime("%B %d, %Y") %></span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+          <span style="color: #6b7280; font-weight: 500;">Duration</span>
+          <span style="font-weight: 600;">
+            <% if @reservation.is_returned? %>
+              <%= pluralize(@reservation.actual_rental_days, 'day') %> (actual)
+            <% else %>
+              <%= pluralize(@reservation.duration_days, 'day') %>
+            <% end %>
+          </span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+          <span style="color: #6b7280; font-weight: 500;">Daily Rate</span>
+          <span style="font-weight: 600;"><%= number_to_currency(@reservation.car.daily_rate) %></span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+          <span style="color: #6b7280; font-weight: 500;">
+            <% if @reservation.is_returned? && @reservation.actual_rental_days != @reservation.duration_days %>
+              Recalculated Amount
+            <% else %>
+              Base Amount
+            <% end %>
+          </span>
+          <span style="font-weight: 600;"><%= number_to_currency(@reservation.total_price) %></span>
+        </div>
+        
+        <% if @reservation.admin_discount? %>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+            <span style="color: #27ae60; font-weight: 500;">Admin Discount (20%)</span>
+            <span style="color: #27ae60; font-weight: 600;">-<%= number_to_currency(@reservation.discount_amount) %></span>
+          </div>
+        <% end %>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0;">
+          <span style="color: #6b7280; font-weight: 500;">Total Price</span>
+          <span style="font-size: 1.5rem; font-weight: 700; color: #2563eb;"><%= number_to_currency(@reservation.final_amount_after_discount) %></span>
+        </div>
+      </div>
+      
+      <div class="border-t pt-6 mt-6">
+        <div class="flex gap-2">
+          <% if @reservation.is_upcoming? %>
+            <%= link_to edit_reservation_path(@reservation), class: "btn btn-primary flex-1" do %>
+              <i class="fas fa-edit" style="margin-right: 0.5rem;"></i>Edit Reservation
+            <% end %>
+            <%= link_to cancel_reservation_path(@reservation), 
+                data: { confirm: "Are you sure you want to cancel this reservation?" },
+                class: "btn btn-danger flex-1" do %>
+              <i class="fas fa-times" style="margin-right: 0.5rem;"></i>Cancel Reservation
+            <% end %>
+          <% elsif @reservation.is_past? && !@reservation.is_returned? && current_user.admin? %>
+            <%= form_with url: mark_returned_admin_return_path(@reservation), method: :patch, local: true do |form| %>
+              <%= form.submit "Mark Car Returned", 
+                  class: "btn btn-success flex-1",
+                  data: { confirm: "Mark this car as returned? This will generate an invoice." } %>
+            <% end %>
+          <% elsif @reservation.is_active? && !@reservation.is_completed? && current_user.admin? %>
+            <%= form_with url: mark_returned_admin_return_path(@reservation), method: :patch, local: true do |form| %>
+              <%= form.submit "Early Return", 
+                  class: "btn btn-warning flex-1",
+                  data: { confirm: "Return this car early? The invoice will be recalculated based on actual rental days." } %>
+            <% end %>
+          <% else %>
+            <% if current_user.admin? %>
+              <%= link_to "Back to All Reservations", admin_reservations_path, class: "btn btn-secondary flex-1 text-center" %>
+            <% else %>
+              <%= link_to "Back to My Reservations", my_reservations_path, class: "btn btn-secondary flex-1 text-center" %>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Car Details -->
+  <div class="col-md-6">
+    <div class="card">
+      <h2 class="card-title mb-6">Car Information</h2>
+      
+      <div class="car-card-image mb-6">
+        <i class="fas fa-car" style="font-size: 4rem; color: #6c757d;"></i>
+      </div>
+      
+      <div class="space-y-4">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+          <span style="color: #6b7280; font-weight: 500;">Car</span>
+          <span style="font-weight: 600;"><%= @reservation.car.display_name %></span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+          <span style="color: #6b7280; font-weight: 500;">Make & Model</span>
+          <span style="font-weight: 600;"><%= @reservation.car.make %> <%= @reservation.car.model %></span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+          <span style="color: #6b7280; font-weight: 500;">Year</span>
+          <span style="font-weight: 600;"><%= @reservation.car.year %></span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+          <span style="color: #6b7280; font-weight: 500;">License Plate</span>
+          <span style="font-weight: 600; font-family: monospace;"><%= @reservation.car.license_plate %></span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0;">
+          <span style="color: #6b7280; font-weight: 500;">Car Type</span>
+          <span class="car-type-badge <%= @reservation.car.car_type %>">
+            <%= @reservation.car.car_type.titleize %>
+          </span>
+        </div>
+      </div>
+      
+      <div class="border-t pt-6 mt-6">
+        <%= link_to car_path(@reservation.car), class: "btn btn-primary w-full text-center" do %>
+          <i class="fas fa-car" style="margin-right: 0.5rem;"></i>View Car Details
+        <% end %>
+      </div>
+    </div>
+    
+    <!-- Return Status -->
+    <% if @reservation.is_past? %>
+      <div class="card mt-4">
+        <h3 class="card-title mb-4">Return Status</h3>
+        <div class="space-y-3">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #6b7280;">Status:</span>
+            <% if @reservation.is_returned? %>
+              <span class="status-badge active">Returned</span>
+            <% else %>
+              <span class="status-badge upcoming" style="background-color: #e74c3c;">Not Returned</span>
+            <% end %>
+          </div>
+          
+          <% if @reservation.is_returned? %>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #6b7280;">Returned Date:</span>
+              <span style="font-weight: 600;"><%= @reservation.returned_at.strftime("%b %d, %Y") %></span>
+            </div>
+          <% elsif @reservation.is_overdue? %>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #e74c3c;">Days Overdue:</span>
+              <span style="color: #e74c3c; font-weight: 600;"><%= @reservation.days_overdue %></span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #e74c3c;">Penalty Amount:</span>
+              <span style="color: #e74c3c; font-weight: 600;"><%= number_to_currency(@reservation.calculate_penalty_amount) %></span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+    
+    <!-- Invoice Information -->
+    <% if @reservation.invoice.present? %>
+      <div class="card mt-4">
+        <h3 class="card-title mb-4">Invoice Information</h3>
+        <div class="space-y-3">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #6b7280;">Invoice #:</span>
+            <span style="font-weight: 600;">#<%= @reservation.invoice.id %></span>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #6b7280;">Status:</span>
+            <% case @reservation.invoice.status %>
+            <% when "pending" %>
+              <span class="status-badge upcoming">Pending</span>
+            <% when "paid" %>
+              <span class="status-badge active">Paid</span>
+            <% when "overdue" %>
+              <span class="status-badge active" style="background-color: #e74c3c;">Overdue</span>
+            <% end %>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #6b7280;">Total Amount:</span>
+            <span style="font-weight: 600;"><%= @reservation.invoice.formatted_total_amount %></span>
+          </div>
+          
+          <% if @reservation.invoice.penalty_amount > 0 %>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #e74c3c;">Penalty:</span>
+              <span style="color: #e74c3c; font-weight: 600;"><%= @reservation.invoice.formatted_penalty_amount %></span>
+            </div>
+          <% end %>
+          
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #6b7280;">Due Date:</span>
+            <span style="font-weight: 600;"><%= @reservation.invoice.due_date.strftime("%b %d, %Y") %></span>
+          </div>
+        </div>
+        
+        <div class="border-t pt-4 mt-4">
+          <% if current_user.admin? %>
+            <%= link_to admin_invoice_path(@reservation.invoice), class: "btn btn-primary w-full text-center" do %>
+              <i class="fas fa-file-invoice" style="margin-right: 0.5rem;"></i>View Invoice Details
+            <% end %>
+          <% else %>
+            <%= link_to admin_invoice_path(@reservation.invoice), class: "btn btn-primary w-full text-center" do %>
+              <i class="fas fa-file-invoice" style="margin-right: 0.5rem;"></i>View Invoice
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<div class="mt-6">
+  <% if current_user.admin? %>
+    <%= link_to admin_reservations_path, style: "color: #2563eb; text-decoration: none;" do %>
+      <i class="fas fa-arrow-left" style="margin-right: 0.5rem;"></i>Back to All Reservations
+    <% end %>
+  <% else %>
+    <%= link_to my_reservations_path, style: "color: #2563eb; text-decoration: none;" do %>
+      <i class="fas fa-arrow-left" style="margin-right: 0.5rem;"></i>Back to My Reservations
+    <% end %>
+  <% end %>
+</div>

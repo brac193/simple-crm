@@ -1,0 +1,110 @@
+<div class="card">
+  <div class="card-header">
+    <h1 class="card-title">Dashboard</h1>
+  </div>
+  
+  <div class="row">
+    <div class="col-md-4">
+      <div class="stats-card">
+        <div class="stats-number"><%= @total_companies %></div>
+        <div class="stats-label">Companies</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="stats-card">
+        <div class="stats-number"><%= @total_clients %></div>
+        <div class="stats-label">Clients</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="stats-card">
+        <div class="stats-number"><%= @total_companies + @total_clients %></div>
+        <div class="stats-label">Total Records</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Recent Companies</h2>
+      </div>
+      <% if @recent_companies.any? %>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @recent_companies.each do |company| %>
+              <tr>
+                <td><%= company.name %></td>
+                <td><%= company.created_at.strftime("%B %d, %Y") %></td>
+                <td>
+                  <%= link_to "View", company_path(company), class: "btn btn-primary btn-sm" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p>No companies yet.</p>
+      <% end %>
+      <%= link_to "View All Companies", companies_path, class: "btn btn-primary" %>
+    </div>
+  </div>
+  
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Recent Clients</h2>
+      </div>
+      <% if @recent_clients.any? %>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Company</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @recent_clients.each do |client| %>
+              <tr>
+                <td><%= client.full_name %></td>
+                <td><%= client.company.name %></td>
+                <td><%= client.created_at.strftime("%B %d, %Y") %></td>
+                <td>
+                  <%= link_to "View", client_path(client), class: "btn btn-primary btn-sm" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p>No clients yet.</p>
+      <% end %>
+      <%= link_to "View All Clients", clients_path, class: "btn btn-primary" %>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">Quick Actions</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <%= link_to "Add New Company", new_company_path, class: "btn btn-success" %>
+    </div>
+    <div class="col-md-6">
+      <%= link_to "Add New Client", new_client_path, class: "btn btn-success" %>
+    </div>
+  </div>
+</div>

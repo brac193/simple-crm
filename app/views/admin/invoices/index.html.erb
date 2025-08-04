@@ -1,0 +1,154 @@
+<% content_for :title, "Invoice Management" %>
+
+<div class="card mb-6">
+  <h1 class="card-title mb-6">Invoice Management</h1>
+  
+  <!-- Filters -->
+  <%= form_with url: admin_invoices_path, method: :get, local: true, class: "mb-4" do |form| %>
+    <div class="row">
+      <div class="col-md-3">
+        <label class="form-label">Status</label>
+        <%= select_tag :status, 
+            options_for_select([['All', ''], ['Pending', 'pending'], ['Paid', 'paid'], ['Overdue', 'overdue']], params[:status]),
+            class: "form-control" %>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label">Customer</label>
+        <%= select_tag :user_id, 
+            options_from_collection_for_select(User.all, :id, :full_name, params[:user_id]),
+            prompt: "All Customers",
+            class: "form-control" %>
+      </div>
+      
+      <div class="col-md-3">
+        <label class="form-label">&nbsp;</label>
+        <div class="flex gap-2">
+          <%= form.submit "Apply Filters", class: "btn btn-primary flex-1" %>
+          <%= link_to "Clear", admin_invoices_path, class: "btn btn-secondary flex-1 text-center" %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<div class="card">
+  <% if @invoices.any? %>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Invoice #</th>
+            <th>Customer</th>
+            <th>Reservation</th>
+            <th>Original</th>
+            <th>Discount</th>
+            <th>Amount</th>
+            <th>Penalty</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Due Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @invoices.each do |invoice| %>
+            <tr>
+              <td>
+                <strong>#<%= invoice.id %></strong><br>
+                <small style="color: #6b7280;"><%= invoice.created_at.strftime("%b %d, %Y") %></small>
+              </td>
+              <td>
+                <strong><%= invoice.user.full_name %></strong><br>
+                <small style="color: #6b7280;"><%= invoice.user.email %></small>
+              </td>
+              <td>
+                <strong><%= invoice.car.display_name %></strong><br>
+                <small style="color: #6b7280;">
+                  <%= invoice.reservation.start_date.strftime("%b %d") %> - <%= invoice.reservation.end_date.strftime("%b %d, %Y") %>
+                </small>
+              </td>
+              <td>
+                <strong><%= invoice.formatted_original_amount %></strong>
+              </td>
+              <td>
+                <% if invoice.has_admin_discount? %>
+                  <span style="color: #27ae60; font-weight: 600;">
+                    -<%= invoice.formatted_discount_amount %>
+                  </span>
+                <% else %>
+                  <span style="color: #6b7280;">-</span>
+                <% end %>
+              </td>
+              <td>
+                <strong><%= invoice.formatted_amount %></strong>
+              </td>
+              <td>
+                <% if invoice.penalty_amount > 0 %>
+                  <span style="color: #e74c3c; font-weight: 600;">
+                    <%= invoice.formatted_penalty_amount %>
+                  </span>
+                <% else %>
+                  <span style="color: #6b7280;">-</span>
+                <% end %>
+              </td>
+              <td>
+                <strong style="font-size: 1.1rem;">
+                  <%= invoice.formatted_total_amount %>
+                </strong>
+              </td>
+              <td>
+                <% case invoice.status %>
+                <% when "pending" %>
+                  <span class="status-badge upcoming">Pending</span>
+                <% when "paid" %>
+                  <span class="status-badge active">Paid</span>
+                <% when "overdue" %>
+                  <span class="status-badge active" style="background-color: #e74c3c;">Overdue</span>
+                <% end %>
+              </td>
+              <td>
+                <%= invoice.due_date.strftime("%b %d, %Y") %><br>
+                <% if invoice.overdue? %>
+                  <small style="color: #e74c3c;">
+                    <%= pluralize(invoice.days_overdue, 'day') %> overdue
+                  </small>
+                <% else %>
+                  <small style="color: #6b7280;">
+                    Due in <%= pluralize((invoice.due_date - Date.current).to_i, 'day') %>
+                  </small>
+                <% end %>
+              </td>
+              <td>
+                <div class="flex gap-2">
+                  <%= link_to "View", admin_invoice_path(invoice), class: "btn btn-sm btn-primary" %>
+                  <% if invoice.status == "pending" %>
+                    <%= form_with url: mark_paid_admin_invoice_path(invoice), method: :patch, local: true, style: "display: inline;" do |form| %>
+                      <%= form.submit "Mark Paid", 
+                          class: "btn btn-sm btn-success",
+                          data: { confirm: "Mark this invoice as paid?" } %>
+                    <% end %>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="text-center" style="padding: 2rem;">
+      <i class="fas fa-file-invoice" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem;"></i>
+      <p style="color: #6b7280;">No invoices found.</p>
+    </div>
+  <% end %>
+</div>
+
+<div class="mt-4">
+  <%= link_to admin_path, class: "btn btn-secondary" do %>
+    <i class="fas fa-arrow-left" style="margin-right: 0.5rem;"></i>Back to Dashboard
+  <% end %>
+  <%= link_to admin_returns_path, class: "btn btn-primary" do %>
+    <i class="fas fa-car" style="margin-right: 0.5rem;"></i>Manage Returns
+  <% end %>
+</div> 

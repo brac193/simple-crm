@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  car_type: 1
+  make: MyString
+  model: MyString
+  year: 1
+  license_plate: MyString
+  daily_rate: 9.99
+
+two:
+  car_type: 1
+  make: MyString
+  model: MyString
+  year: 1
+  license_plate: MyString
+  daily_rate: 9.99

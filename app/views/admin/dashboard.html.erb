@@ -1,0 +1,184 @@
+<% content_for :title, "Admin Dashboard" %>
+
+<div class="card mb-6">
+  <h1 class="card-title mb-6">Admin Dashboard</h1>
+</div>
+
+<div class="row mb-6">
+  <div class="col-md-3">
+    <div class="card">
+      <div style="text-align: center; padding: 1.5rem;">
+        <i class="fas fa-users" style="font-size: 2rem; color: #3498db; margin-bottom: 0.5rem;"></i>
+        <h3 style="margin: 0; color: #2c3e50;"><%= @total_users %></h3>
+        <p style="margin: 0.25rem 0 0 0; color: #6b7280;">Total Users</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3">
+    <div class="card">
+      <div style="text-align: center; padding: 1.5rem;">
+        <i class="fas fa-car" style="font-size: 2rem; color: #27ae60; margin-bottom: 0.5rem;"></i>
+        <h3 style="margin: 0; color: #2c3e50;"><%= @total_cars %></h3>
+        <p style="margin: 0.25rem 0 0 0; color: #6b7280;">Total Cars</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3">
+    <div class="card">
+      <div style="text-align: center; padding: 1.5rem;">
+        <i class="fas fa-calendar-check" style="font-size: 2rem; color: #f39c12; margin-bottom: 0.5rem;"></i>
+        <h3 style="margin: 0; color: #2c3e50;"><%= @total_reservations %></h3>
+        <p style="margin: 0.25rem 0 0 0; color: #6b7280;">Total Reservations</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3">
+    <div class="card">
+      <div style="text-align: center; padding: 1.5rem;">
+        <i class="fas fa-file-invoice" style="font-size: 2rem; color: #9b59b6; margin-bottom: 0.5rem;"></i>
+        <h3 style="margin: 0; color: #2c3e50;"><%= Invoice.count %></h3>
+        <p style="margin: 0.25rem 0 0 0; color: #6b7280;">Total Invoices</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-6">
+  <div class="col-md-6">
+    <div class="card">
+      <h2 class="card-title mb-4">Quick Actions</h2>
+      <div class="space-y-3">
+        <%= link_to admin_users_path, class: "btn btn-primary w-full text-center" do %>
+          <i class="fas fa-users" style="margin-right: 0.5rem;"></i>Manage Users
+        <% end %>
+        
+        <%= link_to cars_path, class: "btn btn-success w-full text-center" do %>
+          <i class="fas fa-car" style="margin-right: 0.5rem;"></i>Manage Cars
+        <% end %>
+        
+        <%= link_to admin_reservations_path, class: "btn btn-info w-full text-center" do %>
+          <i class="fas fa-calendar" style="margin-right: 0.5rem;"></i>View All Reservations
+        <% end %>
+        
+        <%= link_to admin_returns_path, class: "btn btn-warning w-full text-center" do %>
+          <i class="fas fa-undo" style="margin-right: 0.5rem;"></i>Manage Returns
+        <% end %>
+        
+        <%= link_to admin_invoices_path, class: "btn btn-secondary w-full text-center" do %>
+          <i class="fas fa-file-invoice" style="margin-right: 0.5rem;"></i>Manage Invoices
+        <% end %>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-6">
+    <div class="card">
+      <h2 class="card-title mb-4">Current Status</h2>
+      <div class="space-y-3">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
+          <span style="color: #6b7280;">Active Reservations:</span>
+          <span style="font-weight: 600; color: #27ae60;"><%= @active_reservations %></span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
+          <span style="color: #6b7280;">Upcoming Reservations:</span>
+          <span style="font-weight: 600; color: #f39c12;"><%= @upcoming_reservations %></span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
+          <span style="color: #6b7280;">Overdue Returns:</span>
+          <span style="font-weight: 600; color: #e74c3c;"><%= Reservation.overdue_returns.count %></span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
+          <span style="color: #6b7280;">Pending Invoices:</span>
+          <span style="font-weight: 600; color: #9b59b6;"><%= Invoice.pending.count %></span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
+          <span style="color: #6b7280;">Overdue Invoices:</span>
+          <span style="font-weight: 600; color: #e74c3c;"><%= Invoice.overdue_invoices.count %></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="card-title mb-4">Recent Reservations</h2>
+  
+  <% if @recent_reservations.any? %>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Car</th>
+            <th>Dates</th>
+            <th>Status</th>
+            <th>Total Price</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @recent_reservations.each do |reservation| %>
+            <tr>
+              <td>
+                <strong><%= reservation.user.full_name %></strong><br>
+                <small style="color: #6b7280;"><%= reservation.user.email %></small>
+              </td>
+              <td>
+                <strong><%= reservation.car.display_name %></strong><br>
+                <small style="color: #6b7280;"><%= reservation.car.license_plate %></small>
+              </td>
+              <td>
+                <%= reservation.start_date.strftime("%b %d, %Y") %> - <%= reservation.end_date.strftime("%b %d, %Y") %><br>
+                <small style="color: #6b7280;"><%= pluralize(reservation.duration_days, 'day') %></small>
+              </td>
+              <td>
+                <% if reservation.is_completed? %>
+                  <span class="status-badge completed">Completed</span>
+                <% elsif reservation.is_active? %>
+                  <span class="status-badge active">Active</span>
+                <% elsif reservation.is_upcoming? %>
+                  <span class="status-badge upcoming">Upcoming</span>
+                <% elsif reservation.is_overdue? %>
+                  <span class="status-badge active" style="background-color: #e74c3c;">Overdue</span>
+                <% else %>
+                  <span class="status-badge completed">Completed</span>
+                <% end %>
+              </td>
+              <td>
+                <strong><%= number_to_currency(reservation.final_amount_after_discount) %></strong>
+                <% if reservation.admin_discount? %>
+                  <br>
+                  <small style="color: #27ae60;">
+                    <i class="fas fa-tag" style="margin-right: 0.25rem;"></i>20% Admin Discount
+                  </small>
+                <% end %>
+              </td>
+              <td>
+                <div class="flex gap-2">
+                  <%= link_to "View", reservation_path(reservation), class: "btn btn-sm btn-primary" %>
+                  <% if reservation.is_past? && !reservation.is_returned? %>
+                    <%= form_with url: mark_returned_admin_return_path(reservation), method: :patch, local: true, style: "display: inline;" do |form| %>
+                      <%= form.submit "Mark Returned", class: "btn btn-sm btn-success" %>
+                    <% end %>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="text-center" style="padding: 2rem;">
+      <i class="fas fa-calendar-times" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem;"></i>
+      <p style="color: #6b7280;">No recent reservations.</p>
+    </div>
+  <% end %>
+</div>

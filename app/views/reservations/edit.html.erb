@@ -1,0 +1,118 @@
+<% content_for :title, "Edit Reservation" %>
+
+<div class="row">
+  <div class="col-md-8">
+    <div class="card">
+      <h1 class="card-title mb-6">Edit Reservation</h1>
+      
+      <%= form_with model: @reservation, local: true, class: "space-y-4" do |form| %>
+        <% if @reservation.errors.any? %>
+          <div class="alert alert-danger">
+            <h4><%= pluralize(@reservation.errors.count, "error") %> prohibited this reservation from being saved:</h4>
+            <ul>
+              <% @reservation.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+        
+        <div class="form-group">
+          <%= form.label :car_id, "Car", class: "form-label" %>
+          <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 0.5rem; border: 1px solid #e5e7eb;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h4 style="margin: 0; color: #1f2937;"><%= @reservation.car.display_name %></h4>
+                <p style="margin: 0.25rem 0 0 0; color: #6b7280;">
+                  <i class="fas fa-id-card" style="margin-right: 0.25rem;"></i><%= @reservation.car.license_plate %>
+                </p>
+                <p style="margin: 0.25rem 0 0 0; color: #6b7280;">
+                  <i class="fas fa-dollar-sign" style="margin-right: 0.25rem;"></i><%= number_to_currency(@reservation.car.daily_rate) %> / day
+                </p>
+              </div>
+              <span class="car-type-badge <%= @reservation.car.car_type %>">
+                <%= @reservation.car.car_type.titleize %>
+              </span>
+            </div>
+          </div>
+          <%= form.hidden_field :car_id %>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <%= form.label :start_date, "Start Date", class: "form-label" %>
+              <%= form.date_field :start_date, 
+                  min: Date.current,
+                  class: "form-control",
+                  required: true %>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <div class="form-group">
+              <%= form.label :end_date, "End Date", class: "form-label" %>
+              <%= form.date_field :end_date, 
+                  min: Date.current + 1.day,
+                  class: "form-control",
+                  required: true %>
+            </div>
+          </div>
+        </div>
+        
+        <div class="flex gap-2">
+          <%= form.submit "Update Reservation", class: "btn btn-primary flex-1" %>
+          <% if current_user.admin? %>
+            <%= link_to "Cancel", admin_reservations_path, class: "btn btn-secondary flex-1 text-center" %>
+          <% else %>
+            <%= link_to "Cancel", my_reservations_path, class: "btn btn-secondary flex-1 text-center" %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <div class="card">
+      <h2 class="card-title mb-4">Current Reservation</h2>
+      <div class="space-y-3">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: #6b7280;">Current Dates:</span>
+          <span style="font-weight: 600;">
+            <%= @reservation.start_date.strftime("%b %d") %> - <%= @reservation.end_date.strftime("%b %d, %Y") %>
+          </span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: #6b7280;">Duration:</span>
+          <span style="font-weight: 600;"><%= pluralize(@reservation.duration_days, 'day') %></span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: #6b7280;">Original Price:</span>
+          <span style="font-weight: 600;"><%= number_to_currency(@reservation.total_price) %></span>
+        </div>
+        <% if @reservation.admin_discount? %>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #27ae60;">Admin Discount:</span>
+            <span style="color: #27ae60; font-weight: 600;">-<%= number_to_currency(@reservation.discount_amount) %></span>
+          </div>
+        <% end %>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: #6b7280;">Total Price:</span>
+          <span style="font-weight: 600;"><%= number_to_currency(@reservation.final_amount_after_discount) %></span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: #6b7280;">Status:</span>
+          <% if @reservation.is_completed? %>
+            <span class="status-badge completed">Completed</span>
+          <% elsif @reservation.is_active? %>
+            <span class="status-badge active">Active</span>
+          <% elsif @reservation.is_upcoming? %>
+            <span class="status-badge upcoming">Upcoming</span>
+          <% else %>
+            <span class="status-badge completed">Completed</span>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
